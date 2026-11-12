@@ -38,6 +38,7 @@ import java.util.Map;
 
 import static org.apache.kafka.connect.data.Schema.STRING_SCHEMA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class HeaderFromTest {
@@ -344,6 +345,27 @@ public class HeaderFromTest {
         SourceRecord expectedRecord = expectedBuilder.withSchema(keyTransform);
         SourceRecord xformed = xform.apply(originalRecord);
         assertSameRecord(expectedRecord, xformed);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void withSchemaAndMissingField(boolean keyTransform) {
+        HeaderFrom<SourceRecord> xform = keyTransform ? new HeaderFrom.Key<>() : new HeaderFrom.Value<>();
+        xform.configure(config(List.of("missing-header"), List.of("missing"), HeaderFrom.Operation.COPY, true));
+
+        Schema schema = SchemaBuilder.struct().field("field1", STRING_SCHEMA).build();
+        Struct struct = new Struct(schema).put("field1", "field1-value");
+        SourceRecord original = keyTransform
+            ? new SourceRecord(null, null, "test", 0, schema, struct, null, null)
+            : new SourceRecord(null, null, "test", 0, null, null, schema, struct);
+
+        SourceRecord xformed = xform.apply(original);
+
+        // same result as for a schemaless record: the header is added without a value
+        Header header = xformed.headers().lastWithName("missing-header");
+        assertNull(header.value());
+        assertNull(header.schema());
+        assertEquals(struct, keyTransform ? xformed.key() : xformed.value());
     }
 
     @ParameterizedTest
