@@ -291,7 +291,19 @@ public class ConnectSchemaTest {
         ConnectSchema differentValueSchema = new ConnectSchema(Schema.Type.ARRAY, false, new String[] {"b", "c"}, null, null, null, null, null, null, SchemaBuilder.int8().build());
 
         assertEquals(s1, s2);
+        assertEquals(s1.hashCode(), s2.hashCode());
         assertNotEquals(s1, differentValueSchema);
+    }
+
+    @Test
+    public void testBytesDefaultValueEquality() {
+        Schema s1 = SchemaBuilder.bytes().defaultValue(new byte[] {1, 2}).build();
+        Schema s2 = SchemaBuilder.bytes().defaultValue(new byte[] {1, 2}).build();
+        Schema differentDefault = SchemaBuilder.bytes().defaultValue(new byte[] {1, 3}).build();
+
+        assertEquals(s1, s2);
+        assertEquals(s1.hashCode(), s2.hashCode());
+        assertNotEquals(s1, differentDefault);
     }
 
     @Test

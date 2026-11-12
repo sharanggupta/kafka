@@ -21,6 +21,7 @@ import org.apache.kafka.connect.errors.DataException;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -325,8 +326,9 @@ public class ConnectSchema implements Schema {
     @Override
     public int hashCode() {
         if (this.hash == null) {
-            this.hash = Objects.hash(type, optional, defaultValue, fields, keySchema, valueSchema, name, version, doc,
-                parameters);
+            // equals() compares the default value with deepEquals(), so an array must be hashed by its content
+            this.hash = Objects.hash(type, optional, Arrays.deepHashCode(new Object[] {defaultValue}), fields, keySchema,
+                valueSchema, name, version, doc, parameters);
         }
         return this.hash;
     }
