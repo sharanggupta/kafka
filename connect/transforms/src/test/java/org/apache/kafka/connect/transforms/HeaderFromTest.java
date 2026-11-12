@@ -38,6 +38,7 @@ import java.util.Map;
 
 import static org.apache.kafka.connect.data.Schema.STRING_SCHEMA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -363,6 +364,7 @@ public class HeaderFromTest {
 
         // same result as for a schemaless record: the header is added without a value
         Header header = xformed.headers().lastWithName("missing-header");
+        assertNotNull(header);
         assertNull(header.value());
         assertNull(header.schema());
         assertEquals(struct, keyTransform ? xformed.key() : xformed.value());

@@ -141,9 +141,10 @@ public abstract class HeaderFrom<R extends ConnectRecord<R>> implements Transfor
         for (int i = 0; i < fields.size(); i++) {
             String fieldName = fields.get(i);
             String headerName = headers.get(i);
-            Field field = operatingSchema.field(fieldName);
-            Object fieldValue = field != null ? getFieldValue(value, field) : null;
-            Schema fieldSchema = field != null ? field.schema() : null;
+            Field valueField = value.schema().field(fieldName);
+            Object fieldValue = valueField != null ? getFieldValue(value, valueField) : null;
+            Field schemaField = operatingSchema.field(fieldName);
+            Schema fieldSchema = schemaField != null ? schemaField.schema() : null;
             updatedHeaders.add(headerName, fieldValue, fieldSchema);
         }
         return newRecord(record, updatedSchema, updatedValue, updatedHeaders);
