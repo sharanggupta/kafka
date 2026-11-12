@@ -276,6 +276,69 @@ public class CastTest {
     }
 
     @Test
+    public void castWholeTimestampRecordValueWithSchemaInt64() {
+        xformValue.configure(Map.of(Cast.SPEC_CONFIG, "int64"));
+        SourceRecord transformed = xformValue.apply(new SourceRecord(null, null, "topic", 0,
+                Timestamp.SCHEMA, new Date(42L)));
+
+        assertEquals(Schema.INT64_SCHEMA, transformed.valueSchema());
+        assertEquals(42L, transformed.value());
+    }
+
+    @Test
+    public void castWholeBigDecimalRecordValueDropsLogicalSchema() {
+        BigDecimal bigDecimal = new BigDecimal("42.5");
+        xformValue.configure(Map.of(Cast.SPEC_CONFIG, "string"));
+        SourceRecord transformed = xformValue.apply(new SourceRecord(null, null, "topic", 0,
+                Decimal.schema(bigDecimal.scale()), bigDecimal));
+
+        assertEquals(Schema.STRING_SCHEMA, transformed.valueSchema());
+        assertEquals("42.5", transformed.value());
+    }
+
+    @Test
+    public void castWholeDateRecordValueWithSchemaInt32() {
+        xformValue.configure(Map.of(Cast.SPEC_CONFIG, "int32"));
+        SourceRecord transformed = xformValue.apply(new SourceRecord(null, null, "topic", 0,
+                org.apache.kafka.connect.data.Date.SCHEMA, new Date(2 * MILLIS_PER_DAY)));
+
+        assertEquals(Schema.INT32_SCHEMA, transformed.valueSchema());
+        assertEquals(2, transformed.value());
+    }
+
+    @Test
+    public void castWholeTimeRecordValueWithSchemaInt32() {
+        xformValue.configure(Map.of(Cast.SPEC_CONFIG, "int32"));
+        SourceRecord transformed = xformValue.apply(new SourceRecord(null, null, "topic", 0,
+                Time.SCHEMA, new Date(42L)));
+
+        assertEquals(Schema.INT32_SCHEMA, transformed.valueSchema());
+        assertEquals(42, transformed.value());
+    }
+
+    @Test
+    public void castWholeOptionalTimestampRecordValueKeepsDocAndDefault() {
+        xformValue.configure(Map.of(Cast.SPEC_CONFIG, "int64"));
+        Schema schema = Timestamp.builder().optional().doc("creation time").defaultValue(new Date(1000L)).build();
+        SourceRecord transformed = xformValue.apply(new SourceRecord(null, null, "topic", 0,
+                schema, new Date(42L)));
+
+        assertEquals(SchemaBuilder.int64().optional().doc("creation time").defaultValue(1000L).build(),
+                transformed.valueSchema());
+        assertEquals(42L, transformed.value());
+    }
+
+    @Test
+    public void castWholeRecordValueKeepsSchemaName() {
+        xformValue.configure(Map.of(Cast.SPEC_CONFIG, "string"));
+        SourceRecord transformed = xformValue.apply(new SourceRecord(null, null, "topic", 0,
+                SchemaBuilder.int32().name("my.Name").build(), 42));
+
+        assertEquals(SchemaBuilder.string().name("my.Name").build(), transformed.valueSchema());
+        assertEquals("42", transformed.value());
+    }
+
+    @Test
     public void castWholeRecordDefaultValue() {
         // Validate default value in schema is correctly converted
         xformValue.configure(Map.of(Cast.SPEC_CONFIG, "int32"));

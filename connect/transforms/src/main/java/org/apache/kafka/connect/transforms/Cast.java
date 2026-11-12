@@ -27,6 +27,7 @@ import org.apache.kafka.common.utils.internals.AppInfoParser;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.ConnectSchema;
 import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
@@ -200,7 +201,13 @@ public abstract class Cast<R extends ConnectRecord<R>> implements Transformation
 
         final SchemaBuilder builder;
         if (wholeValueCastType != null) {
-            builder = SchemaUtil.copySchemaBasics(valueSchema, convertFieldType(wholeValueCastType));
+            builder = convertFieldType(wholeValueCastType);
+            if (isConnectLogicalType(valueSchema)) {
+                // the cast value is no longer of the logical type, which the name, version and parameters describe
+                builder.doc(valueSchema.doc());
+            } else {
+                SchemaUtil.copySchemaBasics(valueSchema, builder);
+            }
         } else {
             builder = SchemaUtil.copySchemaBasics(valueSchema, SchemaBuilder.struct());
             for (Field field : valueSchema.fields()) {
@@ -227,6 +234,14 @@ public abstract class Cast<R extends ConnectRecord<R>> implements Transformation
         updatedSchema = builder.build();
         schemaUpdateCache.put(valueSchema, updatedSchema);
         return updatedSchema;
+    }
+
+    private static boolean isConnectLogicalType(Schema schema) {
+        String name = schema.name();
+        return Decimal.LOGICAL_NAME.equals(name)
+            || Date.LOGICAL_NAME.equals(name)
+            || Time.LOGICAL_NAME.equals(name)
+            || Timestamp.LOGICAL_NAME.equals(name);
     }
 
     private SchemaBuilder convertFieldType(Schema.Type type) {
